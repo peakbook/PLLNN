@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="assets/css/rickshaw.min.css">
+<link rel="stylesheet" href="assets/css/style.css">
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"> </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+    tex2jax: {
+        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+        displayMath: [ ['$$','$$'], ["\\[","\\]"] ]
+    }
+});
+</script>
+<script type="text/javascript" src="assets/js/d3.min.js"></script>
+<script type="text/javascript" src="assets/js/rickshaw.min.js"></script>
+<script type="text/javascript" src="assets/js/random-0.26.js"></script>
+<script type="text/javascript" src="assets/js/numeric-1.2.6.min.js"></script>
+<script type="text/javascript" src="assets/js/oscillator.js"></script>
+</head>
+<body>
+<div class="parent">
+    <div style="margin-bottom: 20px;">
+        <div class="adjuster">
+            <label for="param_epsilon">$\epsilon$:</label>
+            <input type="range" id="param_epsilon" min="0" max="30" step="0.1" value="1" onChange="document.getElementById('param_epsilon_i').value = this.value; change_param();">
+            <input type="number" id="param_epsilon_i" min="0" max="30" step="0.1" value="1" style="width: 50px;" onChange="document.getElementById('param_epsilon').value = this.value;change_param();">
+
+            <br>
+            <label for="param_omega">$\Omega$:</label>
+            <input type="range" id="param_omega" min="0" max="5" step="0.1" value="1" onChange="document.getElementById('param_omega_i').value = this.value; change_param();">
+            <input type="number" id="param_omega_i" min="0" max="5" step="0.1" value="1" style="width: 50px;" onChange="document.getElementById('param_omega').value = this.value;change_param();">
+
+            <br>
+            <label for="param_sigma">$\sigma$:</label>
+            <input type="range" id="param_sigma" min="0" max="1" step="0.01" value="0.00" onChange="document.getElementById('param_sigma_i').value = this.value; change_param();">
+            <input type="number" id="param_sigma_i" min="0" max="1" step="0.01" value="0.00" style="width: 50px;" onChange="document.getElementById('param_sigma').value = this.value;change_param();">
+            <br>
+        </div>
+
+        <div class="adjuster">
+            Learning method
+            <br>
+            <input type="radio" id="lmethod" name="lmethod" value="Hebbian" checked="checked" onChange="change_learning(learning_hebbian);">Hebbian
+            <input type="radio" name="lmethod" value="Projection" onChange="change_learning(learning_projection);">Projection
+        </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+        <div class="adjuster">
+                <div class="adjuster" style="width:200px">
+                    <div id="pattern_r" class="patterns" style="width:200px;"></div>
+                    Pattern to be Recognized
+                    <br>
+                    <input type="button" id="button_change" value="Change" onclick="change_pattern()" >
+                </div>
+                <div class="adjuster" style="width:280px">
+                    <div id="pattern_0" class="patterns"></div>
+                    <div id="pattern_1" class="patterns"></div>
+                    <div id="pattern_2" class="patterns"></div>
+                    <br>
+                    Patterns to be Memorized
+                    <br>
+                    <br>
+            </div>
+        </div>
+    </div>
+
+    <div id="viz" style="text-align: center;"></div>
+    <div>
+        <input type="button" id="button_reset" value="Randomize" onclick="randomize()" >
+        <br>
+        <input type="button" id="button_start" value="Start" onclick="start()" >
+        <input type="radio" id="modes" name="modes" value="initialize" checked="checked">Initialize
+        <input type="radio" name="modes" value="associate">Associate
+    </div>
+
+    <div id="y_axis" class="y_axis"></div>
+    <div id="chart_order" class="chart"></div>
+    <div id="viz_phases" class="plot_phases"></div>
+</div>
+<script type="text/javascript">
+"use strict";
+
+var timerid=null;
+var w=6;
+var h=10;
+var r=15;
+var rs=5;
+var omega=1;
+var sigma=0.00;
+var epsilon=1;
+var dataset=[];
+var dataset_p0=[];
+var dataset_p1=[];
+var dataset_p2=[];
+var dataset_pr=[];
+var osil = new Oscillators(w*h,omega,sigma,epsilon);
+var ci;
+var cp;
+var vw = document.getElementById("viz_phases").clientWidth;
+var vh = document.getElementById("viz_phases").clientHeight;
+var tv = 50;
+var graph1;
+var view_unit;
+var view_phase;
+var line = d3.svg.line()
+    .x(function(d){ return d[0]; })
+    .y(function(d){ return d[1]; });
+
+var learning = learning_hebbian;
+
+var pat0 = [
+   -1,-1, 1, 1,-1,-1,
+   -1, 1, 1, 1, 1,-1,
+    1, 1,-1,-1, 1, 1,
+    1,-1,-1,-1,-1, 1,
+    1,-1,-1,-1,-1, 1,
+    1,-1,-1,-1,-1, 1,
+    1,-1,-1,-1,-1, 1,
+    1, 1,-1,-1, 1, 1,
+   -1, 1, 1, 1, 1,-1,
+   -1,-1, 1, 1,-1,-1
+];
+
+var pat1 = [
+   -1,-1, 1, 1,-1,-1,
+   -1, 1, 1, 1,-1,-1,
+    1, 1, 1, 1,-1,-1,
+   -1,-1, 1, 1,-1,-1,
+   -1,-1, 1, 1,-1,-1,
+   -1,-1, 1, 1,-1,-1,
+   -1,-1, 1, 1,-1,-1,
+   -1,-1, 1, 1,-1,-1,
+   -1,-1, 1, 1,-1,-1,
+    1, 1, 1, 1, 1, 1
+];
+
+var pat2 = [
+   -1, 1, 1, 1, 1,-1,
+    1, 1, 1, 1, 1, 1,
+    1, 1,-1,-1, 1, 1,
+   -1,-1,-1,-1, 1, 1,
+   -1,-1,-1,-1, 1, 1,
+   -1,-1,-1, 1, 1,-1,
+   -1,-1, 1, 1,-1,-1,
+   -1, 1, 1,-1,-1,-1,
+    1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1
+];
+
+var patr = [
+   -1,-1, 1,-1,-1,-1,
+    1, 1, 1, 1, 1,-1,
+   -1, 1, 1, 1,-1, 1,
+   -1,-1,-1, 1,-1,-1,
+   -1,-1, 1, 1,-1,-1,
+   -1,-1, 1,-1,-1,-1,
+   -1,-1, 1, 1,-1,-1,
+   -1,-1,-1, 1,-1,-1,
+   -1,-1, 1, 1,-1,-1,
+    1,-1, 1, 1, 1, 1
+];
+
+function draw_init()
+{ 
+    view_unit = d3.select("#viz").append("svg");
+    view_phase = d3.select("#viz_phases").append("svg");
+
+    view_unit
+        .attr("width", w*r*2)
+        .attr("height", h*r*2);    
+
+    view_phase
+        .attr("width", vw)
+        .attr("height", vh);
+
+    view_phase.append("g")
+        .attr("class","units");
+
+    var grp = view_phase.append("g")
+        .attr("class","base");
+
+    grp.append("circle")
+        .attr("r", vw*0.45)
+        .attr("cx",vw*0.5)
+        .attr("cy",vh*0.5)
+        .attr("stroke", "gray")
+        .attr("fill", "transparent");
+
+    grp.append("path")
+        .attr("d", line([[0, 0.5*vh], [vw, 0.5*vh]]))
+        .attr("stroke", "black")
+        .attr("stroke-width", 1);
+
+    grp.append("path")
+        .attr("d", line([[0.5*vw, 0], [0.5*vw, vh]]))
+        .attr("stroke", "black")
+        .attr("stroke-width", 1);
+
+    graph1 = new Rickshaw.Graph( {
+        element: document.getElementById("chart_order"),
+        renderer: 'line',
+        max: 1.05,
+        min: -1.05,
+        series: new Rickshaw.Series.FixedDuration([{ name: '0'}], undefined, {
+            timeInterval: tv,
+            maxDataPoints: 100,
+            timeBase: new Date().getTime() / 1000
+        }) 
+    });
+
+    new Rickshaw.Graph.HoverDetail({
+        graph: graph1
+    });
+        
+    new Rickshaw.Graph.Axis.Y({
+        element: document.getElementById('y_axis'),
+        graph: graph1,
+        grid: true,
+        orientation: 'left',
+        tickValues: [-1.0,0,1.0],
+        tickFormat: function(y){return y.toPrecision(2); } 
+    });
+
+    for(let ds of [{name:"#pattern_r",data:dataset_pr, basedata: patr},{name:"#pattern_0",data:dataset_p0, basedata: pat0},{name:"#pattern_1",data:dataset_p1, basedata: pat1},{name:"#pattern_2",data:dataset_p2, basedata: pat2}])
+    {
+        var obj = d3.select(ds.name).append("svg")
+            .attr("width", w*rs*2)
+            .attr("height", h*rs*2)
+            .selectAll("circle")
+            .data(ds.data)
+
+        obj.enter().append("circle")
+            .attr("r", rs)
+            .attr("fill", function(d,i){return d3.hsl(170,-d.val*0.5+0.5,0.40);})
+            .attr("cx", function(d,i){return d.x*rs*2+rs;})
+            .attr("cy", function(d,i){return d.y*rs*2+rs;})
+            .on("click", function(d,i){
+                    ds.basedata[i] = -d.val;
+                    ds.data[i].val = -d.val;
+                    calc_connection();
+                    d3.select(this)
+                    .attr("fill", function(d,i){
+                            return d3.hsl(170,-d.val*0.5+0.5,0.40);
+                            });
+                });
+    }
+}
+
+function gen_patterns()
+{
+    dataset_p0.splice(0,dataset_p0.length);
+    dataset_p1.splice(0,dataset_p1.length);
+    dataset_p2.splice(0,dataset_p2.length);
+    dataset_pr.splice(0,dataset_pr.length);
+
+    for (var j=0;j<h;j++){
+        for (var i=0;i<w;i++){
+            dataset_p0.push({val:pat0[w*j+i],x:i,y:j});
+            dataset_p1.push({val:pat1[w*j+i],x:i,y:j});
+            dataset_p2.push({val:pat2[w*j+i],x:i,y:j});
+            dataset_pr.push({val:patr[w*j+i],x:i,y:j});
+        }
+    }
+}
+
+function gen_dataset()
+{
+    dataset = [];
+
+    for (var j=0;j<h;j++){
+        for (var i=0;i<w;i++){
+            dataset.push({val:0,x:i,y:j});
+        }
+    }
+}
+
+function calc_connection()
+{
+    ci = learning([patr]);
+    cp = learning([pat0,pat1,pat2]);
+}
+
+function learning_hebbian(m)
+{
+    var tm = numeric.transpose(m);
+    var cw = numeric.dot(tm,m);
+    cw = numeric.sub(cw,numeric.diag(numeric.getDiag(cw)));
+    cw = numeric.mul(cw,1.0/(w*h));
+
+    return cw;
+}
+
+function learning_projection(m)
+{
+    var tm = numeric.transpose(m);
+    var cw = numeric.dot(tm,numeric.dot(numeric.inv(numeric.dot(m,tm)),m));
+    cw = numeric.sub(cw,numeric.diag(numeric.getDiag(cw)));
+    //cw = numeric.mul(cw,1.0/(w*h));
+
+    return cw;
+}
+
+function start()
+{
+    var btn = document.getElementById("button_start");
+    if(timerid == null)
+    {
+        timerid = setInterval(update,tv);
+        btn.value = "Stop";
+    }
+    else
+    {
+        clearInterval(timerid);
+        timerid = null;
+        btn.value = "Start";
+    }
+}
+
+function update()
+{
+    update_data();
+    update_view();
+    update_chart();
+}
+
+function update_view()
+{
+    var obj = view_unit.selectAll("circle")
+        .data(dataset);
+
+    obj.enter().append("circle")
+        .attr("r", r)
+        .attr("cx", function(d,i){return d.x*r*2+r;})
+        .attr("cy", function(d,i){return d.y*r*2+r;});
+
+    obj.exit().remove();
+
+    obj.transition()
+        .duration(tv)
+        .attr("fill", function(d,i){return d3.hsl(170,(Math.cos(d.val-dataset[0].val)+1)*0.5,0.45);})
+
+        obj = view_phase.select(".units")
+        .selectAll("circle")
+        .data(dataset);
+
+    obj.enter().append("circle")
+        .attr("r", 5)
+        .attr("opacity", 0.75)
+        .attr("fill", function(d,i){return d3.hsl(i/(w*h)*360,1,0.65);});
+
+    obj.exit().remove();
+
+    obj.transition()
+        .duration(0)
+        .attr("cx", function(d,i){return (Math.cos(d.val)*0.45+0.5)*vw;})
+        .attr("cy", function(d,i){return (Math.sin(d.val)*0.45+0.5)*vh;});
+}
+
+function update_chart()
+{
+    var data = { };
+    for(var i=0;i<dataset.length;i++)
+    {
+        data[i.toString()] = Math.sin(dataset[i].val);
+    }
+    graph1.series.addData(data);
+    graph1.render();
+}
+
+function update_data()
+{
+    if(document.getElementById("modes").checked)
+    {
+        osil.associate(ci,tv/1000);
+    }
+    else
+    {
+        osil.associate(cp,tv/1000);
+    }
+
+    for(var i=0;i<dataset.length;i++)
+    {
+        dataset[i].val = osil.units[i].theta;
+    }
+}
+
+function change_param()
+{
+    omega = parseFloat(document.getElementById("param_omega").value);
+    sigma = parseFloat(document.getElementById("param_sigma").value);
+    epsilon = parseFloat(document.getElementById("param_epsilon").value);
+
+    osil.setOmega(omega,sigma);
+    osil.setEpsilon(epsilon);
+}
+
+
+function randomize()
+{
+    osil.randomize();
+    update_data();
+    update_view();
+}
+
+function change_pattern()
+{
+    patr.splice(0,patr.length);
+    [pat0,pat1,pat2][Math.floor(Math.random()*3)].forEach(function(d){patr.push(d);});
+
+    var pos = Array.apply(null, {length: w*h}).map(Number.call, Number)
+        function shuffle(o){
+            for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+            return o;
+        };
+    shuffle(pos).splice(0,Math.floor(pos.length*0.9));
+    console.log(pos.length);
+    for(var i of pos)
+    {
+         patr[i] *= -1;
+    }
+    dataset_pr.splice(0,dataset_pr.length);
+
+    for (var j=0;j<h;j++){
+        for (var i=0;i<w;i++){
+            dataset_pr.push({val:patr[w*j+i],x:i,y:j});
+        }
+    }
+
+    calc_connection();
+
+    d3.select("#pattern_r")
+        .selectAll("svg")
+        .selectAll("circle")
+        .data(dataset_pr)
+        .transition()
+        .duration(0)
+        .attr("fill", function(d,i){return d3.hsl(170,-d.val*0.5+0.5,0.40);});
+}
+
+function change_learning(f)
+{
+    learning = f;
+    calc_connection();
+}
+
+gen_dataset();
+gen_patterns();
+calc_connection();
+draw_init();
+update();
+
+</script>
+</body>
+</html>
