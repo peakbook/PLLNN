@@ -1,95 +1,103 @@
 <!DOCTYPE html>
 <html>
-<head>
-<meta charset="UTF-8">
-<link rel="stylesheet" href="assets/css/rickshaw.min.css">
-<link rel="stylesheet" href="assets/css/style.css">
-<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"> </script>
-<script type="text/x-mathjax-config">
-MathJax.Hub.Config({
-    tex2jax: {
-        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
-        displayMath: [ ['$$','$$'], ["\\[","\\]"] ]
-    }
-});
-</script>
-<script type="text/javascript" src="assets/js/d3.min.js"></script>
-<script type="text/javascript" src="assets/js/rickshaw.min.js"></script>
-<script type="text/javascript" src="assets/js/random-0.26.js"></script>
-<script type="text/javascript" src="assets/js/numeric-1.2.6.min.js"></script>
-<script type="text/javascript" src="assets/js/oscillator.js"></script>
-</head>
-<body>
-<div class="parent">
-    <div style="margin-bottom: 20px;">
-        <div class="adjuster">
-            <label for="param_epsilon">$\epsilon$:</label>
-            <input type="range" id="param_epsilon" min="0" max="30" step="0.1" value="1" onChange="document.getElementById('param_epsilon_i').value = this.value; change_param();">
-            <input type="number" id="param_epsilon_i" min="0" max="30" step="0.1" value="1" style="width: 50px;" onChange="document.getElementById('param_epsilon').value = this.value;change_param();">
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="assets/css/rickshaw.min.css">
+        <link rel="stylesheet" href="assets/css/style.css">
+        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"> </script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                tex2jax: {
+                    inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                    displayMath: [ ['$$','$$'], ["\\[","\\]"] ]
+                }
+            });
+        </script>
+        <script type="text/javascript" src="assets/js/d3.min.js"></script>
+        <script type="text/javascript" src="assets/js/rickshaw.min.js"></script>
+        <script type="text/javascript" src="assets/js/random-0.26.js"></script>
+        <script type="text/javascript" src="assets/js/numeric-1.2.6.min.js"></script>
+        <script type="text/javascript" src="assets/js/oscillator.js"></script>
+    </head>
+    <body>
+    <div class="parent">
+        <div>
+            $$\frac{d \theta_i}{d t}= \Omega_i + \epsilon \sum^N_{j=1}{ s_{ij} \sin (\theta_j - \theta_i) }$$
+            $$\Omega_i = \Omega_0 + \mathrm{randn}(0,\sigma_\Omega)$$
+            $$s_{ij}= \frac{1}{N}\sum^P_{k=0} \xi^k_i \xi^k_j \;\;\text{(Hebbian learning rule)} $$
+            <div style="float: left;width; 350px;height: 120px;">
+                <form>
+                    <label for="param_epsilon">$\epsilon$:</label>
+                    <input type="range" id="param_epsilon" min="0" max="10" step="0.1" value="1" onChange="document.getElementById('param_epsilon_i').value = this.value; change_param();">
+                    <input type="number" id="param_epsilon_i" min="0" max="10" step="0.1" value="1" style="width: 50px;" onChange="document.getElementById('param_epsilon').value = this.value;change_param();">
 
-            <br>
-            <label for="param_omega">$\Omega$:</label>
-            <input type="range" id="param_omega" min="0" max="5" step="0.1" value="1" onChange="document.getElementById('param_omega_i').value = this.value; change_param();">
-            <input type="number" id="param_omega_i" min="0" max="5" step="0.1" value="1" style="width: 50px;" onChange="document.getElementById('param_omega').value = this.value;change_param();">
+                    <br>
+                    <label for="param_omega">$\Omega_0$:</label>
+                    <input type="range" id="param_omega" min="0" max="5" step="0.1" value="1" onChange="document.getElementById('param_omega_i').value = this.value; change_param();">
+                    <input type="number" id="param_omega_i" min="0" max="5" step="0.1" value="1" style="width: 50px;" onChange="document.getElementById('param_omega').value = this.value;change_param();">
 
-            <br>
-            <label for="param_sigma">$\sigma$:</label>
-            <input type="range" id="param_sigma" min="0" max="1" step="0.01" value="0.00" onChange="document.getElementById('param_sigma_i').value = this.value; change_param();">
-            <input type="number" id="param_sigma_i" min="0" max="1" step="0.01" value="0.00" style="width: 50px;" onChange="document.getElementById('param_sigma').value = this.value;change_param();">
-            <br>
-        </div>
-
-        <div class="adjuster">
-            Learning method
-            <br>
-            <input type="radio" id="lmethod" name="lmethod" value="Hebbian" checked="checked" onChange="change_learning(learning_hebbian);">Hebbian
-            <input type="radio" name="lmethod" value="Projection" onChange="change_learning(learning_projection);">Projection
-        </div>
-    </div>
-
-    <div style="margin-bottom: 20px;">
-        <div class="adjuster">
-                <div class="adjuster" style="width:200px">
-                    <div id="pattern_r" class="patterns" style="width:200px;"></div>
-                    Pattern to be Recognized
                     <br>
-                    <input type="button" id="button_change" value="Change" onclick="change_pattern()" >
-                </div>
-                <div class="adjuster" style="width:280px">
-                    <div id="pattern_0" class="patterns"></div>
-                    <div id="pattern_1" class="patterns"></div>
-                    <div id="pattern_2" class="patterns"></div>
+                    <label for="param_sigma">$\sigma_\Omega$:</label>
+                    <input type="range" id="param_sigma" min="0" max="1" step="0.01" value="0.01" onChange="document.getElementById('param_sigma_i').value = this.value; change_param();">
+                    <input type="number" id="param_sigma_i" min="0" max="1" step="0.01" value="0.01" style="width: 50px;" onChange="document.getElementById('param_sigma').value = this.value;change_param();">
                     <br>
-                    Patterns to be Memorized
-                    <br>
-                    <br>
+                </form>
+            </div>
+            <div style="float: left; width: 140px; height:120px;">
+                <p>Learning Rule</p>
+                <form>
+                    <input type="radio" id="lmethod" name="lmethod" value="Hebbian" checked="checked" onChange="change_learning();">Hebbian<br>
+                    <input type="radio" name="lmethod" value="Projection" onChange="change_learning();">Projection
+                </form>
             </div>
         </div>
-    </div>
 
-    <div id="viz" style="text-align: center;"></div>
-    <div>
-        <input type="button" id="button_reset" value="Randomize" onclick="randomize()" >
-        <br>
-        <input type="button" id="button_start" value="Start" onclick="start()" >
-        <input type="radio" id="modes" name="modes" value="initialize" checked="checked">Initialize
-        <input type="radio" name="modes" value="associate">Associate
-    </div>
+        <div style="float: left; width: 240px; height: 380px;">
+            <div class="area">
+                <div id="pattern_r" class="patterns" style="width: 240px"></div>
+                <div>Pattern to be Recognized</div>
+                <form>
+                    <input type="button" id="button_change" value="Gen" onclick="change_pattern()" >
+                </form>
+            </div>
+            <div class="area">
+                <div id="pattern_0" class="patterns" style="float: left;width: 80px"></div>
+                <div id="pattern_1" class="patterns" style="float: left;width: 80px"></div>
+                <div id="pattern_2" class="patterns" style="float: left;width: 80px"></div>
+                <p>Patterns to be Memorized</p><br>
+            </div>
+        </div>
+        <div style="float: left;width:260px; height: 380px;">
+            <div id="viz"></div>
+            <form>
+                <input type="button" id="button_reset" value="Randomize" onclick="randomize()" >
+                <input type="button" id="button_start" value="Start" onclick="start()" > <br>
+                <input type="radio" id="modes" name="modes" value="initialize" checked="checked" onChange="change_mode()">Initialize
+                <input type="radio" name="modes" value="associate" onChange="change_mode()">Associate
+            </form>
+                <br>
+        </div>
 
-    <div id="y_axis" class="y_axis"></div>
-    <div id="chart_order" class="chart"></div>
-    <div id="viz_phases" class="plot_phases"></div>
-</div>
-<script type="text/javascript">
+        <div style="width: 500px;">
+            <div id="y_axis" class="y_axis"></div>
+            <div id="chart_order" class="chart"></div>
+            <div id="viz_phases" class="plot_phases"></div>
+        </div>
+    </div>
+</body>
+
+<script type="application/javascript;version=1.7">
 "use strict";
-
+window.fx = true;
 var timerid=null;
+var tv = 100;
+var factor_tv=1;
 var w=6;
 var h=10;
 var r=15;
 var rs=5;
 var omega=1;
-var sigma=0.00;
+var sigma=0.01;
 var epsilon=1;
 var dataset=[];
 var dataset_p0=[];
@@ -97,17 +105,22 @@ var dataset_p1=[];
 var dataset_p2=[];
 var dataset_pr=[];
 var osil = new Oscillators(w*h,omega,sigma,epsilon);
-var ci;
-var cp;
+var cm;
+var cm_init;
+var cm_asso;
 var vw = document.getElementById("viz_phases").clientWidth;
 var vh = document.getElementById("viz_phases").clientHeight;
-var tv = 50;
 var graph1;
 var view_unit;
 var view_phase;
 var line = d3.svg.line()
     .x(function(d){ return d[0]; })
     .y(function(d){ return d[1]; });
+var cdata = { };
+for(var i=0;i<w*h;i++)
+{
+    cdata[i.toString()] = 0;
+}
 
 var learning = learning_hebbian;
 
@@ -224,8 +237,10 @@ function draw_init()
         tickFormat: function(y){return y.toPrecision(2); } 
     });
 
-    for(let ds of [{name:"#pattern_r",data:dataset_pr, basedata: patr},{name:"#pattern_0",data:dataset_p0, basedata: pat0},{name:"#pattern_1",data:dataset_p1, basedata: pat1},{name:"#pattern_2",data:dataset_p2, basedata: pat2}])
+    for(var ds of [{name:"#pattern_r",data:dataset_pr, basedata: patr},{name:"#pattern_0",data:dataset_p0, basedata: pat0},{name:"#pattern_1",data:dataset_p1, basedata: pat1},{name:"#pattern_2",data:dataset_p2, basedata: pat2}])
     {
+        let a = ds.data;
+        let b = ds.basedata;
         var obj = d3.select(ds.name).append("svg")
             .attr("width", w*rs*2)
             .attr("height", h*rs*2)
@@ -238,14 +253,13 @@ function draw_init()
             .attr("cx", function(d,i){return d.x*rs*2+rs;})
             .attr("cy", function(d,i){return d.y*rs*2+rs;})
             .on("click", function(d,i){
-                    ds.basedata[i] = -d.val;
-                    ds.data[i].val = -d.val;
-                    calc_connection();
-                    d3.select(this)
-                    .attr("fill", function(d,i){
-                            return d3.hsl(170,-d.val*0.5+0.5,0.40);
-                            });
+                b[i] = -b[i];
+                a[i].val = -a[i].val;
+                calc_connection();
+                d3.select(this).attr("fill", function(d,i){
+                    return d3.hsl(170,-d.val*0.5+0.5,0.40);
                 });
+            });
     }
 }
 
@@ -279,28 +293,29 @@ function gen_dataset()
 
 function calc_connection()
 {
-    ci = learning([patr]);
-    cp = learning([pat0,pat1,pat2]);
+    cm_init = learning([patr]);
+    cm_asso = learning([pat0,pat1,pat2]);
+    change_mode();
 }
 
 function learning_hebbian(m)
 {
     var tm = numeric.transpose(m);
-    var cw = numeric.dot(tm,m);
-    cw = numeric.sub(cw,numeric.diag(numeric.getDiag(cw)));
-    cw = numeric.mul(cw,1.0/(w*h));
+    var tmp = numeric.dot(tm,m);
+    tmp = numeric.sub(tmp,numeric.diag(numeric.getDiag(tmp)));
+    tmp = numeric.mul(tmp,1.0/(w*h));
 
-    return cw;
+    return tmp;
 }
 
 function learning_projection(m)
 {
     var tm = numeric.transpose(m);
-    var cw = numeric.dot(tm,numeric.dot(numeric.inv(numeric.dot(m,tm)),m));
-    cw = numeric.sub(cw,numeric.diag(numeric.getDiag(cw)));
-    //cw = numeric.mul(cw,1.0/(w*h));
+    var tmp = numeric.dot(tm,numeric.dot(numeric.inv(numeric.dot(m,tm)),m));
+    tmp = numeric.sub(tmp,numeric.diag(numeric.getDiag(tmp)));
+    //tmp = numeric.mul(tmp,1.0/(w*h));
 
-    return cw;
+    return tmp;
 }
 
 function start()
@@ -342,7 +357,7 @@ function update_view()
         .duration(tv)
         .attr("fill", function(d,i){return d3.hsl(170,(Math.cos(d.val-dataset[0].val)+1)*0.5,0.45);})
 
-        obj = view_phase.select(".units")
+    obj = view_phase.select(".units")
         .selectAll("circle")
         .data(dataset);
 
@@ -361,25 +376,17 @@ function update_view()
 
 function update_chart()
 {
-    var data = { };
     for(var i=0;i<dataset.length;i++)
     {
-        data[i.toString()] = Math.sin(dataset[i].val);
+        cdata[i.toString()] = Math.sin(dataset[i].val);
     }
-    graph1.series.addData(data);
+    graph1.series.addData(cdata);
     graph1.render();
 }
 
 function update_data()
 {
-    if(document.getElementById("modes").checked)
-    {
-        osil.associate(ci,tv/1000);
-    }
-    else
-    {
-        osil.associate(cp,tv/1000);
-    }
+    osil.associate(cm,tv/1000/factor_tv);
 
     for(var i=0;i<dataset.length;i++)
     {
@@ -389,9 +396,9 @@ function update_data()
 
 function change_param()
 {
-    omega = parseFloat(document.getElementById("param_omega").value);
+    omega = parseFloat(document.getElementById("param_omega").value)*factor_tv;
     sigma = parseFloat(document.getElementById("param_sigma").value);
-    epsilon = parseFloat(document.getElementById("param_epsilon").value);
+    epsilon = parseFloat(document.getElementById("param_epsilon").value)*factor_tv;
 
     osil.setOmega(omega,sigma);
     osil.setEpsilon(epsilon);
@@ -416,7 +423,6 @@ function change_pattern()
             return o;
         };
     shuffle(pos).splice(0,Math.floor(pos.length*0.9));
-    console.log(pos.length);
     for(var i of pos)
     {
          patr[i] *= -1;
@@ -440,18 +446,34 @@ function change_pattern()
         .attr("fill", function(d,i){return d3.hsl(170,-d.val*0.5+0.5,0.40);});
 }
 
-function change_learning(f)
+function change_learning()
 {
-    learning = f;
+    learning = document.getElementById("lmethod").checked?learning_hebbian:learning_projection;
     calc_connection();
+}
+
+function change_mode()
+{
+    cm = document.getElementById("modes").checked?cm_init:cm_asso;
 }
 
 gen_dataset();
 gen_patterns();
-calc_connection();
+change_learning();
+change_param();
 draw_init();
 update();
 
 </script>
-</body>
+<script>
+if (typeof window.fx === 'undefined') {
+    var oldScript = document.querySelector('script[type="application/javascript;version=1.7"]');
+    var text = oldScript.text;
+    document.body.removeChild(oldScript);
+
+    var newScript = document.createElement('script');
+    newScript.text = text;
+    document.body.appendChild(newScript);
+}
+</script>
 </html>

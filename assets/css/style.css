@@ -1,4 +1,3 @@
-
 .chart{
     float: left;
     width: 300px;
@@ -6,6 +5,7 @@
     margin-top: 20px;
     margin-bottom: 20px;
 }
+
 .plot_phases{
     float: left;
     width: 150px;
@@ -14,6 +14,7 @@
     margin-bottom: 20px;
     margin-left: 20px;
 }
+
 .y_axis{
     float: left;
     width: 30px;
@@ -21,24 +22,25 @@
     margin-top: 10px;
     margin-bottom: 10px;
 }
+
 label{
     display: block;
     float: left;
     width: 30px;
     text-align: right;
 }
+
 .parent{
     width: 500px;
     text-align: center;
 }
 
 .patterns{
-    display: inline-block;
-    margin: 5px 10px; 
-    width: 60px;
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
-.adjuster{
-    display: inline-block;
-    display: -moz-inline-box;
+.area{
+    /* background-color: #eeeeee; */
 }
+
